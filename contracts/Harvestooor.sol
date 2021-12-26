@@ -21,14 +21,14 @@ contract Harvestooor is Ownable, ERC721Holder, ERC1155Holder, Pausable {
     }
 
     function sellERC721(IERC721 _nftContract, uint256 _tokenId) public whenNotPaused {
-        _nftContract.safeTransferFrom(msg.sender, address(this), _tokenId);
         saleToken.safeTransfer(msg.sender, ONE_CENT_WEI);
+        _nftContract.safeTransferFrom(msg.sender, address(this), _tokenId);
     }
 
     function sellERC1155(IERC1155 _nftContract, uint256 _tokenId, uint256 _amount) public whenNotPaused {
         require(_amount <= 25, "Must sell 25 or less NFTs in a single transaction");
-        _nftContract.safeTransferFrom(msg.sender, address(this), _tokenId, _amount, "");
         saleToken.safeTransfer(msg.sender, ONE_CENT_WEI * _amount);
+        _nftContract.safeTransferFrom(msg.sender, address(this), _tokenId, _amount, "");
     }
 
     function sellBatchERC1155(IERC1155 _nftContract, uint256[] memory _tokenIds, uint256[] memory _amounts) public whenNotPaused {
@@ -37,8 +37,8 @@ contract Harvestooor is Ownable, ERC721Holder, ERC1155Holder, Pausable {
             require(_amounts[i] <= 25, "Must sell 25 or less NFTs of a single ID per transaction");
             totalNFTs+=_amounts[i];
         }
-        _nftContract.safeBatchTransferFrom(msg.sender, address(this), _tokenIds, _amounts, "");
         saleToken.safeTransfer(msg.sender, ONE_CENT_WEI * totalNFTs);
+        _nftContract.safeBatchTransferFrom(msg.sender, address(this), _tokenIds, _amounts, "");
     }
 
     function emergencyWithdrawERC721(IERC721 _nftContract, uint256 _tokenId, address _receiver) public onlyOwner {
