@@ -13,15 +13,17 @@ import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 contract Harvestooor is Ownable, ERC721Holder, ERC1155Holder, Pausable {
     using SafeERC20 for IERC20;
 
-    IERC20 public saleToken;
+    IERC20 public immutable saleToken;
+    uint8 public immutable saleTokenDecimals;
     uint256 internal constant ONE_CENT_WEI = 10000000000000000;
 
     event ERC721Sale(address nftContract, uint256 tokenId);
     event ERC1155Sale(address nftContract, uint256 tokenId, uint256 amount);
     event ERC1155BatchSale(address nftContract, uint256[] tokenIds, uint256[] amounts);
 
-    constructor(IERC20 _saleToken) {
+    constructor(IERC20 _saleToken, uint8 _saleTokenDecimals) {
         saleToken = _saleToken;
+        saleTokenDecimals = _saleTokenDecimals;
     }
 
     function sellERC721(IERC721 _nftContract, uint256 _tokenId) public whenNotPaused {
