@@ -20,7 +20,7 @@ describe("Harvest contract", function() {
 
     before(async function() {
         const harvestooorFactory = await ethers.getContractFactory("Harvestooor");
-        harvestooorContract = await harvestooorFactory.deploy(FRAX_ADDRESS);
+        harvestooorContract = await harvestooorFactory.deploy(FRAX_ADDRESS, 18);
 
         await hre.network.provider.request({
             method: "hardhat_impersonateAccount",

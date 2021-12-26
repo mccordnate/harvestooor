@@ -15,7 +15,7 @@ contract Harvestooor is Ownable, ERC721Holder, ERC1155Holder, Pausable {
 
     IERC20 public immutable saleToken;
     uint8 public immutable saleTokenDecimals;
-    uint256 internal constant ONE_CENT_WEI = 10000000000000000;
+    uint256 public immutable ONE_CENT_WEI;
 
     event ERC721Sale(address nftContract, uint256 tokenId);
     event ERC1155Sale(address nftContract, uint256 tokenId, uint256 amount);
@@ -24,6 +24,7 @@ contract Harvestooor is Ownable, ERC721Holder, ERC1155Holder, Pausable {
     constructor(IERC20 _saleToken, uint8 _saleTokenDecimals) {
         saleToken = _saleToken;
         saleTokenDecimals = _saleTokenDecimals;
+        ONE_CENT_WEI = 1 * (10 ** (_saleTokenDecimals - 2));
     }
 
     function sellERC721(IERC721 _nftContract, uint256 _tokenId) public whenNotPaused {
