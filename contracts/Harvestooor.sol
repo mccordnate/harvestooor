@@ -13,8 +13,12 @@ import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 contract Harvestooor is Ownable, ERC721Holder, ERC1155Holder, Pausable {
     using SafeERC20 for IERC20;
 
-    IERC20 saleToken;
+    IERC20 public saleToken;
     uint256 internal constant ONE_CENT_WEI = 10000000000000000;
+
+    event ERC721Sale(address nftContract, uint256 tokenId);
+    event ERC1155Sale(address nftContract, uint256 tokenId, uint256 amount);
+    event ERC1155BatchSale(address nftContract, uint256[] tokenIds, uint256[] amounts);
 
     constructor(IERC20 _saleToken) {
         saleToken = _saleToken;
@@ -23,12 +27,14 @@ contract Harvestooor is Ownable, ERC721Holder, ERC1155Holder, Pausable {
     function sellERC721(IERC721 _nftContract, uint256 _tokenId) public whenNotPaused {
         saleToken.safeTransfer(msg.sender, ONE_CENT_WEI);
         _nftContract.safeTransferFrom(msg.sender, address(this), _tokenId);
+        emit ERC721Sale(address(_nftContract), _tokenId);
     }
 
     function sellERC1155(IERC1155 _nftContract, uint256 _tokenId, uint256 _amount) public whenNotPaused {
         require(_amount <= 25, "Must sell 25 or less NFTs in a single transaction");
         saleToken.safeTransfer(msg.sender, ONE_CENT_WEI * _amount);
         _nftContract.safeTransferFrom(msg.sender, address(this), _tokenId, _amount, "");
+        emit ERC1155Sale(address(_nftContract), _tokenId, _amount);
     }
 
     function sellBatchERC1155(IERC1155 _nftContract, uint256[] memory _tokenIds, uint256[] memory _amounts) public whenNotPaused {
@@ -39,6 +45,7 @@ contract Harvestooor is Ownable, ERC721Holder, ERC1155Holder, Pausable {
         }
         saleToken.safeTransfer(msg.sender, ONE_CENT_WEI * totalNFTs);
         _nftContract.safeBatchTransferFrom(msg.sender, address(this), _tokenIds, _amounts, "");
+        emit ERC1155BatchSale(address(_nftContract), _tokenIds, _amounts);
     }
 
     function emergencyWithdrawERC721(IERC721 _nftContract, uint256 _tokenId, address _receiver) public onlyOwner {
