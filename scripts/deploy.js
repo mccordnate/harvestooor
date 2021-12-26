@@ -1,8 +1,9 @@
 const FRAX_ADDRESS = "0x853d955acef822db058eb8505911ed77f175b99e";
+const RINKEBY_DAI_ADDRESS = "0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa"
 
 async function main() {
     const harvestooorFactory = await ethers.getContractFactory("Harvestooor");
-    const harvestooorContract = await harvestooorFactory.deploy(FRAX_ADDRESS, 18);
+    const harvestooorContract = await harvestooorFactory.deploy(RINKEBY_DAI_ADDRESS, 18);
 
     console.log("Harvestooor deployed to: ", harvestooorContract.address);
 }
