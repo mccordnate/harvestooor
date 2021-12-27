@@ -13,42 +13,66 @@ import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 contract Harvestooor is Ownable, ERC721Holder, ERC1155Holder, Pausable {
     using SafeERC20 for IERC20;
 
-    IERC20 public immutable saleToken;
-    uint8 public immutable saleTokenDecimals;
-    uint256 public immutable ONE_CENT_WEI;
+
+    mapping(IERC20 => uint256) internal saleTokens;
 
     event ERC721Sale(address nftContract, uint256 tokenId);
     event ERC1155Sale(address nftContract, uint256 tokenId, uint256 amount);
     event ERC1155BatchSale(address nftContract, uint256[] tokenIds, uint256[] amounts);
 
-    constructor(IERC20 _saleToken, uint8 _saleTokenDecimals) {
-        saleToken = _saleToken;
-        saleTokenDecimals = _saleTokenDecimals;
-        ONE_CENT_WEI = 1 * (10 ** (_saleTokenDecimals - 2));
+    event TokenSupported(address tokenAddress);
+    event TokenSupportRemoved(address tokenAddress);
+
+    constructor() {
     }
 
-    function sellERC721(IERC721 _nftContract, uint256 _tokenId) public whenNotPaused {
-        saleToken.safeTransfer(msg.sender, ONE_CENT_WEI);
+    modifier saleTokenSupported(IERC20 _saleToken) {
+        require(saleTokens[_saleToken] != 0, "Token not supported");
+        _;
+    }
+
+    function sellERC721(IERC721 _nftContract, uint256 _tokenId, IERC20 _saleToken) public whenNotPaused saleTokenSupported(_saleToken) {
+        _saleToken.safeTransfer(msg.sender, saleTokens[_saleToken]);
         _nftContract.safeTransferFrom(msg.sender, address(this), _tokenId);
         emit ERC721Sale(address(_nftContract), _tokenId);
     }
 
-    function sellERC1155(IERC1155 _nftContract, uint256 _tokenId, uint256 _amount) public whenNotPaused {
+    function sellERC1155(IERC1155 _nftContract, uint256 _tokenId, uint256 _amount, IERC20 _saleToken) public whenNotPaused saleTokenSupported(_saleToken) {
         require(_amount <= 25, "Must sell 25 or less NFTs in a single transaction");
-        saleToken.safeTransfer(msg.sender, ONE_CENT_WEI * _amount);
+        _saleToken.safeTransfer(msg.sender, saleTokens[_saleToken] * _amount);
         _nftContract.safeTransferFrom(msg.sender, address(this), _tokenId, _amount, "");
         emit ERC1155Sale(address(_nftContract), _tokenId, _amount);
     }
 
-    function sellBatchERC1155(IERC1155 _nftContract, uint256[] memory _tokenIds, uint256[] memory _amounts) public whenNotPaused {
+    function sellBatchERC1155(IERC1155 _nftContract, uint256[] memory _tokenIds, uint256[] memory _amounts, IERC20 _saleToken) public whenNotPaused saleTokenSupported(_saleToken) {
+        require(_tokenIds.length == _amounts.length, "tokenIds must be as long as amounts");
         uint256 totalNFTs = 0;
         for (uint256 i = 0; i < _tokenIds.length; i++){
             require(_amounts[i] <= 25, "Must sell 25 or less NFTs of a single ID per transaction");
             totalNFTs+=_amounts[i];
         }
-        saleToken.safeTransfer(msg.sender, ONE_CENT_WEI * totalNFTs);
+        _saleToken.safeTransfer(msg.sender, saleTokens[_saleToken] * totalNFTs);
         _nftContract.safeBatchTransferFrom(msg.sender, address(this), _tokenIds, _amounts, "");
         emit ERC1155BatchSale(address(_nftContract), _tokenIds, _amounts);
+    }
+
+    function supportSaleToken(IERC20 _tokenAddress, uint256 _one_cent_wei) public onlyOwner {
+        saleTokens[_tokenAddress] = _one_cent_wei;
+        emit TokenSupported(address(_tokenAddress));
+    }
+
+    function removeSaleToken(IERC20 _tokenAddress) public onlyOwner {
+        saleTokens[_tokenAddress] = 0;
+        emit TokenSupportRemoved(address(_tokenAddress));
+    }
+
+    function changeOneCentWeiValue(IERC20 _tokenAddress, uint256 _one_cent_wei) public onlyOwner{
+        require(saleTokens[_tokenAddress] > 0, "Token not supported");
+        saleTokens[_tokenAddress] = _one_cent_wei;
+    }
+
+    function getCurrentOneCentWeiValue(IERC20 _tokenAddress) public view returns (uint256) {
+        return saleTokens[_tokenAddress];
     }
 
     function emergencyWithdrawERC721(IERC721 _nftContract, uint256 _tokenId, address _receiver) public onlyOwner {
